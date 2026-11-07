@@ -2,3 +2,10 @@ CLAUDE.md
 PHASE_PROMPTS.md
 /docs/*
 .DS_Store
+.env
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+private_storage/
+staticfiles/

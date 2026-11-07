@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+{% url 'accounts:register' as alt_url %}
+{% include "_form_card.html" with heading="Log in" submit_label="Log in" alt_label="New here? Register your organization" %}
+{% endblock %}

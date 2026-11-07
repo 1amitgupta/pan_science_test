@@ -1,0 +1,10 @@
+Django==5.2.19
+django-mongodb-backend==5.2.4
+google-genai==3.0.0
+numpy==2.5.4
+pydantic==2.14.3
+pymongo==4.19.0
+pypdf==7.0.0
+python-dotenv==1.2.4
+rank-bm25==0.2.2
+scikit-learn==1.9.1
