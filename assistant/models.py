@@ -25,6 +25,15 @@ class AssistantToken(models.Model):
         )
         return token, raw_token
 
+    @classmethod
+    def lookup(cls, raw_token):
+        """Active token for a raw value (compared by hash), or None."""
+        if not raw_token or len(raw_token) > 128:
+            return None
+        return cls.objects.select_related('organization').filter(
+            token_hash=hash_token(raw_token), is_active=True
+        ).first()
+
     def __str__(self):
         return f'{self.token_prefix}… ({self.organization})'
 

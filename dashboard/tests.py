@@ -46,6 +46,9 @@ class StorageMixin:
         override.enable()
         self.addCleanup(override.disable)
         self.addCleanup(shutil.rmtree, self.storage, ignore_errors=True)
+        embed = mock.patch('ai.gemini_client.embed_texts', side_effect=lambda texts, **kw: [[0.1, 0.2]] * len(texts))
+        embed.start()
+        self.addCleanup(embed.stop)
         self.user_a = register_organization('Org A', 'a@a.test', PASSWORD)
         self.org_a = self.user_a.orgmembership.organization
         self.client.force_login(self.user_a)
@@ -134,9 +137,7 @@ class DeleteDocumentTests(StorageMixin, TestCase):
         return self.client.post(reverse('dashboard:delete_document', args=[str(pk)]))
 
     def test_delete_removes_file_chunks_and_row(self):
-        Chunk.objects.create(
-            organization=self.org_a, document=self.doc_a, page_number=1, chunk_index=0, text='t', embedding=[0.1]
-        )
+        self.assertTrue(Chunk.objects.filter(organization=self.org_a, document=self.doc_a).exists())
         response = self.delete(self.doc_a.pk)
         self.assertEqual(response.json()['count'], 0)
         self.assertFalse(Document.objects.filter(pk=self.doc_a.pk).exists())

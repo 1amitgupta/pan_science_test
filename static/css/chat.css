@@ -1,0 +1,15 @@
+html, body { height: 100%; }
+.chat-card { height: 100vh; display: flex; flex-direction: column; }
+.chat-messages { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem; }
+.msg { display: flex; }
+.msg-user { justify-content: flex-end; }
+.bubble { max-width: 85%; padding: .5rem .75rem; border-radius: 1rem; background: #fff; border: 1px solid #dee2e6; word-wrap: break-word; }
+.msg-user .bubble { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+.bubble ul { padding-left: 1.2rem; margin: .25rem 0; }
+.bubble .sources { font-size: .8rem; border-top: 1px solid #dee2e6; margin-top: .5rem; padding-top: .35rem; }
+.typing span { display: inline-block; width: 6px; height: 6px; margin: 0 1px; border-radius: 50%; background: #6c757d; animation: blink 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+.bubble .decision-details { font-size: .8rem; border-top: 1px solid #dee2e6; margin-top: .5rem; padding-top: .35rem; }
+.bubble .decision-details summary { cursor: pointer; font-weight: 600; }

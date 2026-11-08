@@ -145,9 +145,12 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_LLM_MODEL = os.environ.get('GEMINI_LLM_MODEL', 'gemini-2.5-flash')
 GEMINI_FAST_MODEL = os.environ.get('GEMINI_FAST_MODEL', 'gemini-2.5-flash-lite')
 GEMINI_EMBED_MODEL = os.environ.get('GEMINI_EMBED_MODEL', 'gemini-embedding-001')
+GEMINI_EMBED_DIM = int(os.environ.get('GEMINI_EMBED_DIM', '768'))
+GEMINI_TIMEOUT_SECONDS = float(os.environ.get('GEMINI_TIMEOUT_SECONDS', '30'))
 
 PRIVATE_STORAGE_DIR = Path(os.environ.get('PRIVATE_STORAGE_DIR') or BASE_DIR / 'private_storage')
 RETRIEVAL_MIN_SIMILARITY = float(os.environ.get('RETRIEVAL_MIN_SIMILARITY', '0.55'))
+ASK_RATE_LIMIT_PER_MINUTE = int(os.environ.get('ASK_RATE_LIMIT_PER_MINUTE', '20'))
 VECTOR_BACKEND = os.environ.get('VECTOR_BACKEND', 'numpy')
 
 # Default primary key field type

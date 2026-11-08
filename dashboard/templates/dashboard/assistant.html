@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Assistant{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Assistant</h1>
+
+<div id="token-notice" class="alert {% if embed %}alert-success{% else %}alert-info{% endif %}">
+  {% if embed %}
+    Your assistant link is ready. <strong>Copy it now</strong> — for security it is shown only once.
+  {% elif token %}
+    For security, the full link is shown only once, right after it is created. The current link
+    (<code>…/a/{{ token.token_prefix }}…</code>) still works. Generate a new link to view it again — this disables the current one.
+  {% else %}
+    Your organization has no assistant link yet. Generate one to get started.
+  {% endif %}
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <label class="form-label fw-semibold" for="assistant-url">Assistant URL</label>
+    <div class="input-group mb-2">
+      <input type="text" class="form-control font-monospace" id="assistant-url" readonly
+             value="{% if embed %}{{ embed.url }}{% elif token %}{{ request.scheme }}://{{ request.get_host }}/a/{{ token.token_prefix }}…{% endif %}">
+      <button class="btn btn-outline-secondary js-copy" type="button" data-target="#assistant-url"{% if not embed %} disabled{% endif %}>Copy</button>
+    </div>
+    <div class="d-flex gap-2">
+      <a id="preview-link" class="btn btn-outline-primary btn-sm{% if not embed %} d-none{% endif %}" target="_blank" rel="noopener noreferrer"
+         href="{% if embed %}{{ embed.url }}{% else %}#{% endif %}">Open preview</a>
+      <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#regenerate-modal">
+        {% if token %}Regenerate link{% else %}Generate link{% endif %}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h2 class="h6">Embed as an iframe</h2>
+    <div class="position-relative mb-4">
+      <pre class="bg-dark text-light p-3 rounded mb-0" style="white-space:pre-wrap"><code id="iframe-snippet">{% if embed %}{{ embed.iframe_snippet }}{% else %}Generate a link to get the embed code.{% endif %}</code></pre>
+      <button class="btn btn-light btn-sm position-absolute top-0 end-0 m-2 js-copy" type="button" data-target="#iframe-snippet"{% if not embed %} disabled{% endif %}>Copy</button>
+    </div>
+    <h2 class="h6">Embed as a floating chat button</h2>
+    <div class="position-relative">
+      <pre class="bg-dark text-light p-3 rounded mb-0" style="white-space:pre-wrap"><code id="script-snippet">{% if embed %}{{ embed.script_snippet }}{% else %}Generate a link to get the embed code.{% endif %}</code></pre>
+      <button class="btn btn-light btn-sm position-absolute top-0 end-0 m-2 js-copy" type="button" data-target="#script-snippet"{% if not embed %} disabled{% endif %}>Copy</button>
+    </div>
+    <div class="form-text">Paste the script tag before <code>&lt;/body&gt;</code> on any page of your website.</div>
+  </div>
+</div>
+
+<div class="modal fade" id="regenerate-modal" tabindex="-1" aria-labelledby="regenerate-modal-title" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="regenerate-modal-title">Generate a new assistant link?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">The current link and every embed using it will <strong>stop working immediately</strong>.
+          You will need to update the embed code on your website.</p>
+        <div id="regenerate-error" class="alert alert-danger mt-3 mb-0 d-none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="regenerate-confirm" data-url="{% url 'dashboard:regenerate_token' %}">Generate new link</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/assistant.js' %}"></script>{% endblock %}

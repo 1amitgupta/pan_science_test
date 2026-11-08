@@ -6,6 +6,8 @@ from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from assistant.models import AssistantToken
+from assistant.views import NEW_TOKEN_SESSION_KEY, embed_payload
 from knowledge.models import Document
 from knowledge.services import MAX_DOCUMENTS, UploadError, delete_document, store_upload
 
@@ -54,3 +56,22 @@ def delete_document_view(request, pk):
     doc = get_object_or_404(Document, pk=ObjectId(pk), organization=org)
     delete_document(doc)
     return JsonResponse({'deleted': pk, 'count': Document.objects.filter(organization=org).count()})
+
+
+@login_required
+def assistant(request):
+    org = current_org(request)
+    token = AssistantToken.objects.filter(organization=org).first()
+    raw = request.session.pop(NEW_TOKEN_SESSION_KEY, None)  # shown once, then only the hash remains
+    if raw and (token is None or AssistantToken.lookup(raw) != token):
+        raw = None
+    context = {'token': token, 'embed': embed_payload(request, raw) if raw else None}
+    return render(request, 'dashboard/assistant.html', context)
+
+
+@login_required
+@require_POST
+def regenerate_token(request):
+    _, raw = AssistantToken.issue(current_org(request))
+    request.session.pop(NEW_TOKEN_SESSION_KEY, None)
+    return JsonResponse(embed_payload(request, raw))

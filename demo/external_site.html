@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acme Corp — Embed demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #222; background: #fafafa; }
+    header { background: #2b2d42; color: #fff; padding: 1rem 2rem; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .row { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .col { flex: 1 1 380px; }
+    code { background: #eee; padding: .1rem .3rem; border-radius: 3px; }
+    .warn { background: #fff3cd; border: 1px solid #ffe69c; padding: .75rem 1rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <header><strong>Acme Corp</strong> — an external website on a different origin</header>
+  <main>
+    <p>Serve this folder with <code>python -m http.server 8080</code> (from <code>demo/</code>) and open
+      <code>http://localhost:8080/external_site.html?t=YOUR_TOKEN</code>.
+      Optional: <code>&amp;host=http://127.0.0.1:8000</code> (default) to point at the assistant server.</p>
+    <div id="missing" class="warn" hidden>Add <code>?t=YOUR_TOKEN</code> to the URL (copy the token from the dashboard's Assistant page).</div>
+    <div class="row">
+      <div class="col">
+        <h2>Variant 1: iframe</h2>
+        <div id="iframe-slot"></div>
+      </div>
+      <div class="col">
+        <h2>Variant 2: floating button</h2>
+        <p>The <code>&lt;script src=".../embed.js?t=…"&gt;</code> tag adds the chat button in the bottom-right corner.</p>
+      </div>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var token = params.get('t');
+      var host = (params.get('host') || 'http://127.0.0.1:8000').replace(/\/+$/, '');
+      if (!token) { document.getElementById('missing').hidden = false; return; }
+      var enc = encodeURIComponent(token);
+
+      var frame = document.createElement('iframe');
+      frame.src = host + '/a/' + enc + '/';
+      frame.title = 'Assistant';
+      frame.width = '380';
+      frame.height = '560';
+      frame.style.cssText = 'border:1px solid #ddd;border-radius:8px;background:#fff';
+      document.getElementById('iframe-slot').appendChild(frame);
+
+      var s = document.createElement('script');
+      s.src = host + '/embed.js?t=' + enc;
+      s.async = true;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
