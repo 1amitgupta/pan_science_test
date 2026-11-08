@@ -71,7 +71,7 @@ class GeminiClientTests(SimpleTestCase):
             gc.embed_query('q')
 
 
-# ---- Phase 5: System 1 decisions, combiner, classifier ----
+# ---- System 1 decisions, combiner, classifier ----
 from ai import classifier, decisions as dec  # noqa: E402
 from ai.combiner import combine  # noqa: E402
 from ai.schemas import Decision, DecisionResult, Decomposition, CombineSpec, UserFact  # noqa: E402

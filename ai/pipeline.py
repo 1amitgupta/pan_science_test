@@ -1,4 +1,4 @@
-"""Orchestrates SPEC S6 steps 2–9 for one validated question; the view handles step 1."""
+"""Runs the answer pipeline for one validated question; the view handles input validation."""
 import logging
 import time
 import uuid

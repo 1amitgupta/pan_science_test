@@ -1,4 +1,4 @@
-"""Per-page text extraction, page-bounded chunking, and batched embedding (SPEC S3)."""
+"""Per-page text extraction, page-bounded chunking, and batched embedding."""
 import logging
 import re
 

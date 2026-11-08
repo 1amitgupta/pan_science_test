@@ -1,4 +1,4 @@
-"""Hybrid retrieval (cosine + BM25, fused with RRF) with a grounding gate (SPEC S4).
+"""Hybrid retrieval (cosine + BM25, fused with RRF) with a grounding gate.
 Vector scoring: numpy in-process (default) or Atlas $vectorSearch (VECTOR_BACKEND=mongo)."""
 import re
 from dataclasses import dataclass, field
