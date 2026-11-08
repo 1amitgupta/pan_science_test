@@ -11,6 +11,11 @@
   <nav class="navbar navbar-expand navbar-dark bg-dark mb-4">
     <div class="container">
       <a class="navbar-brand" href="{% url 'dashboard:home' %}">Knowledge Assistant</a>
+      {% if user.is_authenticated %}
+      <div class="navbar-nav">
+        <a class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}" href="{% url 'dashboard:home' %}">Knowledge Base</a>
+      </div>
+      {% endif %}
       <div class="navbar-nav ms-auto align-items-center">
         {% if user.is_authenticated %}
           <span class="navbar-text me-3">{{ user.orgmembership.organization.name }}</span>
