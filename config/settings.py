@@ -142,11 +142,12 @@ LOGIN_REDIRECT_URL = 'dashboard:home'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-GEMINI_LLM_MODEL = os.environ.get('GEMINI_LLM_MODEL', 'gemini-2.5-flash')
-GEMINI_FAST_MODEL = os.environ.get('GEMINI_FAST_MODEL', 'gemini-2.5-flash-lite')
+GEMINI_LLM_MODEL = os.environ.get('GEMINI_LLM_MODEL', 'gemini-3.5-flash')
+GEMINI_FAST_MODEL = os.environ.get('GEMINI_FAST_MODEL', 'gemini-3.5-flash-lite')
 GEMINI_EMBED_MODEL = os.environ.get('GEMINI_EMBED_MODEL', 'gemini-embedding-001')
 GEMINI_EMBED_DIM = int(os.environ.get('GEMINI_EMBED_DIM', '768'))
-GEMINI_TIMEOUT_SECONDS = float(os.environ.get('GEMINI_TIMEOUT_SECONDS', '30'))
+GEMINI_TIMEOUT_SECONDS = float(os.environ.get('GEMINI_TIMEOUT_SECONDS', '15'))
+GEMINI_THINKING_LEVEL = os.environ.get('GEMINI_THINKING_LEVEL', 'low')  # '' = model default
 
 PRIVATE_STORAGE_DIR = Path(os.environ.get('PRIVATE_STORAGE_DIR') or BASE_DIR / 'private_storage')
 RETRIEVAL_MIN_SIMILARITY = float(os.environ.get('RETRIEVAL_MIN_SIMILARITY', '0.55'))

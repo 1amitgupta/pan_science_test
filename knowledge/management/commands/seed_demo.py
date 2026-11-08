@@ -74,6 +74,6 @@ class Command(BaseCommand):
         for org, email, raw in summary:
             self.stdout.write(self.style.SUCCESS(org.name))
             self.stdout.write(f'  dashboard: {base_url}/  login {email} / {DEMO_PASSWORD}')
-            self.stdout.write(f'  assistant: {base_url}/a/{raw}/')
+            self.stdout.write(f'  assistant: {base_url}/chat/{raw}/')
             self.stdout.write(f'  embed demo: http://localhost:8080/external_site.html?t={raw}&host={base_url}')
         self.stdout.write('(embed demo: run `python -m http.server 8080` inside demo/)')

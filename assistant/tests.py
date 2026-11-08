@@ -69,7 +69,7 @@ class ChatPageTests(AssistantTestBase):
         response = self.client.get(reverse('assistant:embed_js'), {'t': self.raw})
         self.assertEqual(response.status_code, 200)
         self.assertIn('javascript', response['Content-Type'])
-        self.assertIn(f'/a/{self.raw}/', response.content.decode().replace('\\u002D', '-'))  # escapejs
+        self.assertIn(f'/chat/{self.raw}/', response.content.decode().replace('\\u002D', '-'))  # escapejs
         self.assertEqual(self.client.get(reverse('assistant:embed_js'), {'t': 'bogus'}).status_code, 404)
 
 
@@ -233,7 +233,7 @@ class AssistantDashboardTests(AssistantTestBase):
         session = self.client.session
         session[views.NEW_TOKEN_SESSION_KEY] = self.raw
         session.save()
-        self.assertContains(self.client.get(reverse('dashboard:assistant')), f'/a/{self.raw}/')
+        self.assertContains(self.client.get(reverse('dashboard:assistant')), f'/chat/{self.raw}/')
         response = self.client.get(reverse('dashboard:assistant'))
         self.assertNotContains(response, self.raw)
         self.assertContains(response, self.raw[:8])

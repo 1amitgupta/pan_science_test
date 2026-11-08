@@ -99,6 +99,8 @@ def embed_query(text):
 def generate(prompt, *, model=None, system=None, schema=None, temperature=0.2):
     """Return text, or a validated `schema` (pydantic model class) instance for JSON output."""
     config = types.GenerateContentConfig(system_instruction=system, temperature=temperature)
+    if settings.GEMINI_THINKING_LEVEL:
+        config.thinking_config = types.ThinkingConfig(thinking_level=settings.GEMINI_THINKING_LEVEL)
     if schema is not None:
         config.response_mime_type = 'application/json'
         config.response_schema = schema

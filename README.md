@@ -74,7 +74,7 @@ cd demo && python -m http.server 8080
 flowchart LR
     subgraph Browser
         D[Org dashboard<br/>Bootstrap + jQuery]
-        C[Public chat /a/&lt;token&gt;/]
+        C[Public chat /chat/&lt;token&gt;/]
         E[External site<br/>iframe or embed.js]
     end
     subgraph Django["Django 5.2"]
@@ -194,7 +194,7 @@ Decisions run in parallel, and one failed decision doesn't stop the pipeline. In
   chunks and that Org A can't delete Org B's documents (404).
 - **Tokens**: `secrets.token_urlsafe(32)`. Only the SHA-256 hash and an 8-character display prefix are stored. The
   raw token is shown once, after registration or regeneration. Regenerating invalidates the old URL right away.
-  A token only grants `/a/<token>/` and `/api/ask`. Dashboard and admin views require login and redirect token holders.
+  A token only grants `/chat/<token>/` and `/api/ask`. Dashboard and admin views require login and redirect token holders.
 - **Auth**: Django auth with sessions in MongoDB. All dashboard views and their JSON endpoints use `@login_required`,
   and AJAX requests send the CSRF token. `/api/ask` is CSRF-exempt because it is authenticated by the token in the
   JSON body and uses no cookies. It is rate-limited per IP (429).
@@ -218,7 +218,7 @@ Decisions run in parallel, and one failed decision doesn't stop the pipeline. In
 | GET | `/assistant/` | session | Assistant URL, embed snippets, preview |
 | POST | `/assistant/regenerate/` | session + CSRF | Rotate token and return the new URL once |
 | GET | `/usage/` | session | Outcome counts + last 20 questions |
-| GET | `/a/<token>/` | token | Public chat page (frameable) |
+| GET | `/chat/<token>/` | token | Public chat page (frameable) |
 | GET | `/embed.js?t=<token>` | token | Floating launcher script that opens the chat in an iframe |
 | POST | `/api/ask` | token in body | `{token, question}` → `{answer, outcome, question_type, decisions[], references[], request_id}`. Errors: 400 / 401 / 429 / 503 |
 | — | `/admin/` | staff session | Django admin |

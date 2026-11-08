@@ -9,7 +9,7 @@
     Your assistant link is ready. <strong>Copy it now</strong> — for security it is shown only once.
   {% elif token %}
     For security, the full link is shown only once, right after it is created. The current link
-    (<code>…/a/{{ token.token_prefix }}…</code>) still works. Generate a new link to view it again — this disables the current one.
+    (<code>…/chat/{{ token.token_prefix }}…</code>) still works. Generate a new link to view it again — this disables the current one.
   {% else %}
     Your organization has no assistant link yet. Generate one to get started.
   {% endif %}
@@ -20,7 +20,7 @@
     <label class="form-label fw-semibold" for="assistant-url">Assistant URL</label>
     <div class="input-group mb-2">
       <input type="text" class="form-control font-monospace" id="assistant-url" readonly
-             value="{% if embed %}{{ embed.url }}{% elif token %}{{ request.scheme }}://{{ request.get_host }}/a/{{ token.token_prefix }}…{% endif %}">
+             value="{% if embed %}{{ embed.url }}{% elif token %}{{ request.scheme }}://{{ request.get_host }}/chat/{{ token.token_prefix }}…{% endif %}">
       <button class="btn btn-outline-secondary js-copy" type="button" data-target="#assistant-url"{% if not embed %} disabled{% endif %}>Copy</button>
     </div>
     <div class="d-flex gap-2">

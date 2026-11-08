@@ -176,4 +176,4 @@ class SeedDemoTests(TestCase):
             self.assertEqual({d.original_name for d in docs}, names)
             self.assertTrue(all(d.status == Document.Status.READY and d.page_count >= 2 for d in docs))
         self.assertEqual(len(list(Path(storage).rglob('*.pdf'))), 4)  # old run's files were removed
-        self.assertIn('/a/', out.getvalue())
+        self.assertIn('/chat/', out.getvalue())

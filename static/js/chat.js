@@ -17,20 +17,70 @@ $(function () {
     return $('<div>').text(s).html();
   }
 
-  // Escape everything, then allow only line breaks and simple "- " / "* " bullet lists.
+  // Inline Markdown on already-escaped text: **bold**, *italic*, `code`, [doc p.N] citations.
+  function inline(s) {
+    return escapeHtml(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+      .replace(/\[([^\[\]]+?\s+p\.\s*\d+)\]/g, '<span class="cite">$1</span>');
+  }
+
+  function splitRow(line) {
+    return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (c) { return c.trim(); });
+  }
+
+  // Safe Markdown subset → HTML. Every text fragment goes through escapeHtml; no raw HTML passes.
   function renderText(text) {
-    var html = [], list = [];
-    function flush() {
-      if (list.length) { html.push('<ul>' + list.join('') + '</ul>'); list = []; }
+    var lines = String(text).split(/\r?\n/), out = [], i = 0;
+    var listRe = /^(\s*)([-*•]|\d+[.)])\s+(.*)$/;
+    while (i < lines.length) {
+      var line = lines[i];
+      if (!line.trim()) { i++; continue; }
+      var h = line.match(/^\s*(#{1,6})\s+(.*)$/);
+      if (h) { out.push('<div class="md-h">' + inline(h[2]) + '</div>'); i++; continue; }
+      // Table: header row followed by a |---|---| separator.
+      if (line.indexOf('|') !== -1 && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+        var head = splitRow(line), rows = [];
+        i += 2;
+        while (i < lines.length && lines[i].indexOf('|') !== -1 && lines[i].trim()) { rows.push(splitRow(lines[i])); i++; }
+        var t = '<div class="table-responsive"><table class="table table-sm table-bordered table-striped align-middle mb-2"><thead><tr>';
+        head.forEach(function (c) { t += '<th>' + inline(c) + '</th>'; });
+        t += '</tr></thead><tbody>';
+        rows.forEach(function (r) {
+          t += '<tr>';
+          head.forEach(function (_, k) { t += '<td>' + inline(r[k] || '') + '</td>'; });
+          t += '</tr>';
+        });
+        out.push(t + '</tbody></table></div>');
+        continue;
+      }
+      if (listRe.test(line)) {
+        // Nested lists by indentation; a stack of open list tags.
+        var stack = [], html = '';
+        while (i < lines.length && listRe.test(lines[i])) {
+          var m = lines[i].match(listRe), depth = Math.floor(m[1].replace(/\t/g, '  ').length / 2);
+          var tag = /\d/.test(m[2]) ? 'ol' : 'ul';
+          while (stack.length > depth + 1) html += '</li></' + stack.pop() + '>';
+          if (stack.length === depth + 1 && stack[depth] !== tag) { html += '</li></' + stack.pop() + '>'; }
+          if (stack.length < depth + 1) {
+            while (stack.length < depth + 1) { html += '<' + tag + '>'; stack.push(tag); }
+          } else { html += '</li>'; }
+          html += '<li>' + inline(m[3]);
+          i++;
+        }
+        while (stack.length) html += '</li></' + stack.pop() + '>';
+        out.push(html.replace(/<(ul|ol)><\/li>/g, '<$1>'));
+        continue;
+      }
+      var para = [];
+      while (i < lines.length && lines[i].trim() && !listRe.test(lines[i]) && !/^\s*#{1,6}\s/.test(lines[i]) &&
+             !(lines[i].indexOf('|') !== -1 && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1]))) {
+        para.push(inline(lines[i])); i++;
+      }
+      out.push('<p>' + para.join('<br>') + '</p>');
     }
-    String(text).split(/\r?\n/).forEach(function (line) {
-      var m = line.match(/^\s*[-*•]\s+(.*)$/);
-      if (m) { list.push('<li>' + escapeHtml(m[1]) + '</li>'); return; }
-      flush();
-      html.push(escapeHtml(line) + '<br>');
-    });
-    flush();
-    return html.join('').replace(/(<br>)+$/, '');
+    return out.join('');
   }
 
   function scrollDown() { $messages.scrollTop($messages[0].scrollHeight); }
