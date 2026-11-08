@@ -6,7 +6,7 @@ from django.template.defaultfilters import filesizeformat
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from assistant.models import AssistantToken
+from assistant.models import AssistantToken, QueryLog
 from assistant.views import NEW_TOKEN_SESSION_KEY, embed_payload
 from knowledge.models import Document
 from knowledge.services import MAX_DOCUMENTS, UploadError, delete_document, store_upload
@@ -75,3 +75,19 @@ def regenerate_token(request):
     _, raw = AssistantToken.issue(current_org(request))
     request.session.pop(NEW_TOKEN_SESSION_KEY, None)
     return JsonResponse(embed_payload(request, raw))
+
+
+
+USAGE_COLORS = {'answered': 'success', 'no_answer': 'secondary', 'needs_review': 'warning', 'error': 'danger'}
+
+
+@login_required
+def usage(request):
+    logs = QueryLog.objects.filter(organization=current_org(request))
+    stats = [('Total questions', logs.count(), 'dark')] + [
+        (label, logs.filter(outcome=value).count(), USAGE_COLORS[value]) for value, label in QueryLog.Outcome.choices
+    ]
+    recent = list(logs.order_by('-created_at')[:20])
+    for log in recent:
+        log.color = USAGE_COLORS.get(log.outcome, 'secondary')
+    return render(request, 'dashboard/usage.html', {'stats': stats, 'recent': recent})

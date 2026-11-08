@@ -158,3 +158,33 @@ class DeleteDocumentTests(StorageMixin, TestCase):
         response = self.client.get(reverse('dashboard:delete_document', args=[str(self.doc_a.pk)]))
         self.assertEqual(response.status_code, 405)
         self.assertTrue(Document.objects.filter(pk=self.doc_a.pk).exists())
+
+
+class UsagePageTests(TestCase):
+    def setUp(self):
+        from assistant.models import QueryLog
+        self.user_a = register_organization('Org A', 'a@a.test', PASSWORD)
+        self.user_b = register_organization('Org B', 'b@b.test', PASSWORD)
+        org_a, org_b = (u.orgmembership.organization for u in (self.user_a, self.user_b))
+        for outcome in ['answered', 'answered', 'no_answer', 'needs_review', 'error']:
+            QueryLog.objects.create(organization=org_a, question=f'A question {outcome}', outcome=outcome,
+                                    references=[{'document': 'Rules.pdf', 'page': 2}])
+        QueryLog.objects.create(organization=org_b, question='B secret question', outcome='answered')
+
+    def test_requires_login(self):
+        self.assertEqual(self.client.get(reverse('dashboard:usage')).status_code, 302)
+
+    def test_counts_and_recent_are_org_scoped(self):
+        self.client.force_login(self.user_a)
+        response = self.client.get(reverse('dashboard:usage'))
+        stats = {label: value for label, value, _ in response.context['stats']}
+        self.assertEqual(stats, {'Total questions': 5, 'Answered': 2, 'No answer': 1, 'Needs review': 1, 'Error': 1})
+        self.assertEqual(len(response.context['recent']), 5)
+        self.assertContains(response, 'Rules.pdf p.2')
+        self.assertNotContains(response, 'B secret question')
+
+    def test_org_b_sees_only_its_own(self):
+        self.client.force_login(self.user_b)
+        response = self.client.get(reverse('dashboard:usage'))
+        self.assertEqual(response.context['stats'][0][1], 1)
+        self.assertNotContains(response, 'A question')

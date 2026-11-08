@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from accounts.services import register_organization
 from ai import gemini_client
+from ai.classifier import Classification
 from ai.gemini_client import GeminiUnavailable
 from ai.schemas import CombineSpec, Decision, Decomposition, UserFact
 from knowledge.retrieval import Hit
@@ -245,3 +246,56 @@ class AssistantDashboardTests(AssistantTestBase):
         raw = self.client.session.get(views.NEW_TOKEN_SESSION_KEY)
         self.assertIsNotNone(raw)
         self.assertEqual(AssistantToken.lookup(raw).organization.name, 'Org B')
+
+
+class ErrorMatrixGapTests(AssistantTestBase):
+    def test_rotated_token_is_401_on_api(self):
+        old = self.raw
+        AssistantToken.issue(self.org)
+        self.assertEqual(self.ask(token=old).status_code, 401)
+
+    @mock.patch('knowledge.retrieval.retrieve', return_value=HITS)
+    def test_invalid_decomposition_json_is_needs_review_with_answer(self, _):
+        def fake(prompt, *, schema=None, **kw):
+            if schema is Decomposition:
+                raise gemini_client.GeminiBadResponse('invalid JSON')
+            return 'A person will need to check this [Policy.pdf p.4].'
+
+        with mock.patch.object(gemini_client, 'generate', side_effect=fake):
+            response = self.ask('I bought it 20 days ago, am I eligible for a refund?')
+        data = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual((data['outcome'], data['verdict']), ('needs_review', 'needs_review'))
+        self.assertIn('check this', data['answer'])
+        self.assertEqual(QueryLog.objects.get(organization=self.org).outcome, 'needs_review')
+
+
+@mock.patch('ai.classifier.classify', return_value=Classification('direct', 0.9, 'system1'))
+class CrossTenantAskTests(AssistantTestBase):
+    """S8: Org B's token never retrieves Org A's chunks through /api/ask (real retrieval, mocked Gemini)."""
+
+    def setUp(self):
+        super().setUp()
+        from knowledge.models import Chunk, Document
+        doc = Document.objects.create(organization=self.org, original_name='Scholarship_Rules.pdf', stored_path='x.pdf',
+                                      size_bytes=1, page_count=1, status=Document.Status.READY)
+        Chunk.objects.create(organization=self.org, document=doc, page_number=1, chunk_index=0,
+                             text='Merit scholarship requires GPA of at least 3.5', embedding=[1.0, 0.0])
+        self.org_b = register_organization('Org B', 'b@b.test', PASSWORD).orgmembership.organization
+        _, self.raw_b = AssistantToken.issue(self.org_b)
+
+    @mock.patch('ai.gemini_client.embed_query', return_value=[1.0, 0.0])
+    def test_org_b_token_gets_no_answer_for_org_a_content(self, embed, cls):
+        with mock.patch.object(gemini_client, 'generate', return_value='LEAK [Scholarship_Rules.pdf p.1]') as gen:
+            data = self.ask('What GPA does the merit scholarship require?', token=self.raw_b).json()
+        self.assertEqual(data['outcome'], 'no_answer')
+        self.assertEqual(data['references'], [])
+        gen.assert_not_called()
+        self.assertFalse(QueryLog.objects.filter(organization=self.org).exists())
+        self.assertEqual(QueryLog.objects.get(organization=self.org_b).outcome, 'no_answer')
+
+    @mock.patch('ai.gemini_client.embed_query', return_value=[1.0, 0.0])
+    def test_org_a_token_still_gets_its_own_content(self, embed, cls):
+        with mock.patch.object(gemini_client, 'generate', return_value='GPA 3.5 [Scholarship_Rules.pdf p.1]'):
+            data = self.ask('What GPA does the merit scholarship require?').json()
+        self.assertEqual(data['references'], [{'document': 'Scholarship_Rules.pdf', 'page': 1}])

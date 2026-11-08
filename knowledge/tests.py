@@ -136,3 +136,44 @@ class RetrievalTests(TestCase):
     def test_chunks_of_unready_documents_are_ignored(self, embed):
         Document.objects.filter(organization=self.org_a).update(status=Document.Status.PROCESSING)
         self.assertEqual(search(self.org_a, 'scholarship').hits, [])
+
+
+    @override_settings(VECTOR_BACKEND='mongo')
+    @mock.patch('ai.gemini_client.embed_query', return_value=[1.0, 0.0, 0.0])
+    def test_mongo_backend_uses_vector_search_with_org_filter(self, embed):
+        # Atlas returns (1 + cos) / 2; a foreign-org row must be ignored even if returned.
+        rows = [{'_id': self.b_chunks[0].pk, 'score': 1.0}, {'_id': self.a_chunks[1].pk, 'score': 0.95},
+                {'_id': self.a_chunks[0].pk, 'score': 0.9}]
+        with mock.patch('knowledge.retrieval._chunk_collection') as coll:
+            coll.return_value.aggregate.return_value = rows
+            result = search(self.org_a, 'merit scholarship GPA')
+        stage = coll.return_value.aggregate.call_args[0][0][0]['$vectorSearch']
+        self.assertEqual(stage['filter'], {'organization_id': self.org_a.pk})
+        self.assertEqual((stage['path'], stage['queryVector']), ('embedding', [1.0, 0.0, 0.0]))
+        self.assertEqual({h.doc_name for h in result.hits}, {'Scholarship_Rules.pdf'})
+        self.assertAlmostEqual(result.best_similarity, 0.9)
+        self.assertEqual({h.chunk_id for h in result.hits}, {str(c.pk) for c in self.a_chunks})
+
+
+class SeedDemoTests(TestCase):
+    @mock.patch('ai.gemini_client.embed_texts', side_effect=fake_embed)
+    def test_seed_creates_two_orgs_with_ready_docs_and_is_rerunnable(self, _):
+        import io
+        from django.core.management import call_command
+        from accounts.models import Organization
+        storage, pdfs = tempfile.mkdtemp(), tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, storage, ignore_errors=True)
+        self.addCleanup(shutil.rmtree, pdfs, ignore_errors=True)
+        with override_settings(PRIVATE_STORAGE_DIR=Path(storage)):
+            for _ in range(2):
+                out = io.StringIO()
+                call_command('seed_demo', pdf_dir=pdfs, stdout=out)
+        self.assertEqual(Organization.objects.count(), 2)
+        for slug, names in [('northbridge-university', {'Scholarship_Rules.pdf', 'Student_Handbook.pdf'}),
+                            ('acme-corp', {'Leave_Policy.pdf', 'Expense_Policy.pdf'})]:
+            org = Organization.objects.get(slug=slug)
+            docs = Document.objects.filter(organization=org)
+            self.assertEqual({d.original_name for d in docs}, names)
+            self.assertTrue(all(d.status == Document.Status.READY and d.page_count >= 2 for d in docs))
+        self.assertEqual(len(list(Path(storage).rglob('*.pdf'))), 4)  # old run's files were removed
+        self.assertIn('/a/', out.getvalue())

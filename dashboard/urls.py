@@ -10,4 +10,5 @@ urlpatterns = [
     path('documents/<str:pk>/delete/', views.delete_document_view, name='delete_document'),
     path('assistant/', views.assistant, name='assistant'),
     path('assistant/regenerate/', views.regenerate_token, name='regenerate_token'),
+    path('usage/', views.usage, name='usage'),
 ]

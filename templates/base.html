@@ -15,6 +15,7 @@
       <div class="navbar-nav">
         <a class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}" href="{% url 'dashboard:home' %}">Knowledge Base</a>
         <a class="nav-link{% if request.resolver_match.url_name == 'assistant' %} active{% endif %}" href="{% url 'dashboard:assistant' %}">Assistant</a>
+        <a class="nav-link{% if request.resolver_match.url_name == 'usage' %} active{% endif %}" href="{% url 'dashboard:usage' %}">Usage</a>
       </div>
       {% endif %}
       <div class="navbar-nav ms-auto align-items-center">

@@ -204,3 +204,14 @@ class ClassifierTests(SimpleTestCase):
             with mock.patch.object(gc, 'generate', side_effect=gc.GeminiUnavailable('down')):
                 out = classifier.classify('hmm')
         self.assertEqual((out.label, out.source), ('direct', 'system1_low_confidence'))
+
+
+@override_settings(GEMINI_API_KEY='test-key')
+@mock.patch('ai.gemini_client.time.sleep')
+class GeminiQuotaTests(SimpleTestCase):
+    def test_quota_429_is_retried_then_unavailable(self, sleep):
+        client = mock.MagicMock()
+        client.models.generate_content.side_effect = errors.ClientError(429, {})
+        with mock.patch('ai.gemini_client._client', return_value=client), self.assertRaises(gc.GeminiUnavailable):
+            gc.generate('hi')
+        self.assertEqual(client.models.generate_content.call_count, gc.MAX_RETRIES + 1)
